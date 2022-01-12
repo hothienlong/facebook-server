@@ -1,6 +1,7 @@
 import { updateInfluencer } from '../../services/influencers';
 import { PAGE_ID } from '../../constants';
 const FB = require('fb');
+import axios from 'axios';
 
 // This is where a route is handled, the function MUST accept 2 params request and response.
 // Request will include all the information of the INCOMING request
@@ -14,7 +15,9 @@ export default async (req, res) => {
 
 	var basic_info = await get_basic_info(req.body.access_token);
 
-	// var list_comments = await get_list_comments_of_posts(req.body.access_token);
+	var categories = await get_categories(req.body.access_token);
+
+	// var list_comments = await get_all_comments_of_posts(req.body.access_token);
 
 	// followers -> influencer_size
 	var influencer_size = 'Nano';
@@ -72,7 +75,7 @@ async function get_basic_info(access_token) {
 			{ access_token: access_token }
 		);
 
-		console.log(res);
+		// console.log(res);
 
 		return res;
 	} catch (error) {
@@ -86,6 +89,41 @@ async function get_basic_info(access_token) {
 	}
 }
 
+async function get_categories(access_token) {
+	try {
+		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
+
+		// console.log(res1);
+
+		// return res1;
+	} catch (error) {
+		if (error.response.error.code === 'ETIMEDOUT') {
+			console.log('request timeout');
+			return res1.status(500).json({ error: error.response.error });
+		} else {
+			console.log('error', error.message);
+			return res1.status(500).json({ error: error.message });
+		}
+	}
+
+	var posts = [];
+	for (let i = 0; i < res1.data.length; i++) {
+		if (res1.data[i].message !== undefined) posts.push(res1.data[i].message);
+	}
+
+	// console.log(posts);
+
+	const res2 = await axios({
+		method: 'post',
+		url: `http://localhost:1000/get_categories`,
+		data: { texts: posts },
+	});
+
+	console.log(res2.data.categories);
+
+	return res2.data.categories;
+}
+
 async function calculate_engagement(access_token) {
 	// ko nên dùng hàm callback ở trong hàm async (sẽ ko return đc)
 	try {
@@ -95,7 +133,7 @@ async function calculate_engagement(access_token) {
 			{ access_token: access_token }
 		);
 
-		console.log(res);
+		// console.log(res);
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
@@ -131,7 +169,7 @@ async function calculate_engagement(access_token) {
 	return engagement_score;
 }
 
-async function get_list_comments_of_posts(access_token) {
+async function get_all_comments_of_posts(access_token) {
 	try {
 		var res = await FB.api(
 			PAGE_ID +
@@ -140,7 +178,7 @@ async function get_list_comments_of_posts(access_token) {
 		);
 
 		// console.log(JSON.stringify(res, null, 2));
-		console.log(res);
+		// console.log(res);
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
