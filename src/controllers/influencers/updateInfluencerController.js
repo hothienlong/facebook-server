@@ -157,7 +157,7 @@ async function get_categories(access_token) {
 
 	const res2 = await axios({
 		method: 'post',
-		url: `http://localhost:1000/get_categories`,
+		url: `http://localhost:1000/get_categories_with_count`,
 		data: { texts: posts },
 	});
 
@@ -214,7 +214,7 @@ async function get_engagement(access_token) {
 	}
 
 	// trung bình cộng
-	if (res.data.length !== 0)
+	if (post_count !== 0)
 		engagement_score = (engagement_score / post_count).toFixed(2) * 100;
 	console.log('engagement_score');
 	console.log(engagement_score);
