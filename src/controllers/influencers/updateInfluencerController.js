@@ -112,10 +112,10 @@ async function get_categories(access_token) {
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
-			return { error: error.response.error };
+			return { error: error.response.error, categories: null };
 		} else {
 			console.log('error', error.message);
-			return { error: error.message };
+			return { error: error.message, categories: null };
 		}
 	}
 
@@ -134,7 +134,7 @@ async function get_categories(access_token) {
 
 	console.log(res2.data.categories);
 
-	return res2.data.categories;
+	return { categories: res2.data.categories };
 }
 
 async function calculate_engagement(access_token) {

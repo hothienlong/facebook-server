@@ -13,30 +13,31 @@ export const updateInfluencer = async (
 		console.log('updateInfluencer service');
 
 		console.log(influencer_id);
-		const influencer = await influencerModel.findOneAndUpdate(
-			{ _id: ObjectID(influencer_id) },
-			{
-				influencer_size: influencer_size,
-			},
-			{
-				new: true,
-			}
-		);
+
+		// get influencer hasn't connected facebook yet
+		const influencer = await influencerModel.findOne({
+			_id: ObjectID(influencer_id),
+			'social_network.channel_name': { $ne: 'facebook' },
+		});
 		console.log(influencer);
 
-		influencer.social_network.findOneAndUpdate(
-			{ channel_name: 'facebook' },
-			{
-				channel_name: 'facebook',
-				social_name: social_name,
-				profile_link: profile_link,
-				followers: followers,
-				engagement_score: engagement_score,
-			},
-			{
-				new: true,
-			}
-		);
+		if (!influencer) {
+			return {
+				status: false,
+				message: 'Influencer has connected facebook already',
+			};
+		}
+
+		// if influencer hasn't connected facebook -> add a new one
+		await influencer.updateOne({ influencer_size: influencer_size });
+
+		await influencer.social_network.push({
+			channel_name: 'facebook',
+			social_name: social_name,
+			profile_link: profile_link,
+			followers: followers,
+			engagement_score: engagement_score,
+		});
 
 		await influencer.save();
 
