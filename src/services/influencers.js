@@ -1,5 +1,6 @@
 import influencerModel from '../models/influencers';
 const ObjectID = require('mongodb').ObjectId;
+import { INFLUENCER_SIZE } from '../constants';
 
 export const updateInfluencer = async (
 	influencer_id,
@@ -19,7 +20,7 @@ export const updateInfluencer = async (
 			_id: ObjectID(influencer_id),
 			'social_network.channel_name': { $ne: 'facebook' },
 		});
-		console.log(influencer);
+		// console.log(influencer);
 
 		if (!influencer) {
 			return {
@@ -27,9 +28,6 @@ export const updateInfluencer = async (
 				message: 'Influencer has connected facebook already',
 			};
 		}
-
-		// if influencer hasn't connected facebook -> add a new one
-		await influencer.updateOne({ influencer_size: influencer_size });
 
 		await influencer.social_network.push({
 			channel_name: 'facebook',
@@ -39,11 +37,30 @@ export const updateInfluencer = async (
 			engagement_score: engagement_score,
 		});
 
+		// if influencer hasn't connected facebook -> add a new one
+
+		if (
+			INFLUENCER_SIZE[influencer.influencer_size] <
+			INFLUENCER_SIZE[influencer_size]
+		) {
+			await influencer.updateOne(
+				{ influencer_size: influencer_size },
+				{ new: true }
+			);
+		}
+
 		await influencer.save();
 
-		console.log(influencer);
+		// console.log(influencer);
 
-		return { status: true, influencer: influencer };
+		// lệnh update influencer size không save influencer mới nên phải tìm lại
+		const new_influencer = await influencerModel.findOne({
+			_id: ObjectID(influencer_id),
+		});
+
+		console.log(new_influencer);
+
+		return { status: true, influencer: new_influencer };
 	} catch (error) {
 		console.error(error);
 		return { status: false, message: error };
