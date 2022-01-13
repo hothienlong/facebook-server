@@ -24,13 +24,19 @@ export const updateInfluencer = async (
 		);
 		console.log(influencer);
 
-		influencer.social_network.push({
-			channel_name: 'facebook',
-			social_name: social_name,
-			profile_link: profile_link,
-			followers: followers,
-			engagement_score: engagement_score,
-		});
+		influencer.social_network.findOneAndUpdate(
+			{ channel_name: 'facebook' },
+			{
+				channel_name: 'facebook',
+				social_name: social_name,
+				profile_link: profile_link,
+				followers: followers,
+				engagement_score: engagement_score,
+			},
+			{
+				new: true,
+			}
+		);
 
 		await influencer.save();
 

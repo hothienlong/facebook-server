@@ -1,3 +1,4 @@
+/* eslint-disable no-redeclare */
 import { updateInfluencer } from '../../services/influencers';
 import { PAGE_ID } from '../../constants';
 const FB = require('fb');
@@ -11,13 +12,25 @@ export default async (req, res) => {
 	console.log('updateInfluencerController');
 	console.log(PAGE_ID);
 
-	var engagement_score = await calculate_engagement(req.body.access_token);
+	var { engagement_score, error } = await calculate_engagement(
+		req.body.access_token
+	);
+	if (!engagement_score) {
+		return res.status(500).json(error);
+	}
 
-	var basic_info = await get_basic_info(req.body.access_token);
+	var { basic_info, error } = await get_basic_info(req.body.access_token);
+	if (!basic_info) {
+		return res.status(500).json(error);
+	}
 
-	var categories = await get_categories(req.body.access_token);
+	var { categories, error } = await get_categories(req.body.access_token);
+	if (!categories) {
+		return res.status(500).json(error);
+	}
 
-	// var list_comments = await get_all_comments_of_posts(req.body.access_token);
+	// var all_comments = await get_all_comments_of_posts(req.body.access_token);
+	// if(!all_comments) { return res.status(500).json(error);}
 
 	// followers -> influencer_size
 	var influencer_size = 'Nano';
@@ -77,14 +90,14 @@ async function get_basic_info(access_token) {
 
 		// console.log(res);
 
-		return res;
+		return { basic_info: res };
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
-			return res.status(500).json({ error: error.response.error });
+			return { error: error.response.error, basic_info: null };
 		} else {
 			console.log('error', error.message);
-			return res.status(500).json({ error: error.message });
+			return { error: error.message, basic_info: null };
 		}
 	}
 }
@@ -99,10 +112,10 @@ async function get_categories(access_token) {
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
-			return res1.status(500).json({ error: error.response.error });
+			return { error: error.response.error };
 		} else {
 			console.log('error', error.message);
-			return res1.status(500).json({ error: error.message });
+			return { error: error.message };
 		}
 	}
 
@@ -137,10 +150,10 @@ async function calculate_engagement(access_token) {
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
-			return res.status(500).json({ error: error.response.error });
+			return { error: error.response.error, engagement_score: null };
 		} else {
 			console.log('error', error.message);
-			return res.status(500).json({ error: error.message });
+			return { error: error.message, engagement_score: null };
 		}
 	}
 
@@ -166,7 +179,7 @@ async function calculate_engagement(access_token) {
 	console.log('engagement_score');
 	console.log(engagement_score);
 
-	return engagement_score;
+	return { engagement_score: engagement_score };
 }
 
 async function get_all_comments_of_posts(access_token) {
@@ -182,10 +195,10 @@ async function get_all_comments_of_posts(access_token) {
 	} catch (error) {
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
-			return res.status(500).json({ error: error.response.error });
+			return { error: error.response.error, all_comments: null };
 		} else {
 			console.log('error', error.message);
-			return res.status(500).json({ error: error.message });
+			return { error: error.message, all_comments: null };
 		}
 	}
 }
