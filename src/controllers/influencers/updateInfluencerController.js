@@ -19,17 +19,18 @@ export default async (req, res) => {
 	console.log(PAGE_ID);
 
 	var { engagement_score, error } = await get_engagement(req.body.access_token);
-	if (!engagement_score) {
+	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
+	if (engagement_score === null) {
 		return res.status(500).json(error);
 	}
 
 	var { basic_info, error } = await get_basic_info(req.body.access_token);
-	if (!basic_info) {
+	if (basic_info === null) {
 		return res.status(500).json(error);
 	}
 
 	var { categories, error } = await get_categories(req.body.access_token);
-	if (!categories) {
+	if (categories === null) {
 		return res.status(500).json(error);
 	}
 
@@ -103,6 +104,7 @@ export default async (req, res) => {
 
 // name, link, followers_count, category_list
 async function get_basic_info(access_token) {
+	console.log('get_basic_info');
 	try {
 		var res = await FB.api(
 			PAGE_ID +
@@ -125,6 +127,7 @@ async function get_basic_info(access_token) {
 }
 
 async function get_categories(access_token) {
+	console.log("get_categories");
 	try {
 		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
 
@@ -168,6 +171,7 @@ async function get_categories(access_token) {
 }
 
 async function get_engagement(access_token) {
+	console.log('get_engagement');
 	// ko nên dùng hàm callback ở trong hàm async (sẽ ko return đc)
 	try {
 		var res = await FB.api(
@@ -223,6 +227,7 @@ async function get_engagement(access_token) {
 }
 
 async function get_all_comments_of_posts(access_token) {
+	console.log('get_all_comments_of_posts');
 	try {
 		var res = await FB.api(
 			PAGE_ID +
