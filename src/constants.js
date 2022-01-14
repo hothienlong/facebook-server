@@ -1,4 +1,6 @@
-export const PAGE_ID = '1912266269065309';
+export const APP_ID = '1093184171468667';
+export const APP_SECRET = '0bd71fa631faa58d956222d426f0d0cb';
+// export const PAGE_ID = '1912266269065309';
 
 // export const URL_HEROKU_SENTIMENT = "https://server-inmansy.herokuapp.com"
 

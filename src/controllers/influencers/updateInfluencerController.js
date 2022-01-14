@@ -1,6 +1,5 @@
 /* eslint-disable no-redeclare */
 import { updateInfluencer } from '../../services/influencers';
-import { PAGE_ID } from '../../constants';
 const FB = require('fb');
 import axios from 'axios';
 import FacebookUtil from '../../utils/FacebookUtil';
@@ -17,10 +16,12 @@ const threeMonthAgo = new Date(
 
 export default async (req, res) => {
 	console.log('updateInfluencerController');
-	console.log(PAGE_ID);
 
 	// --------------- Get param to update by facebook api ---------------
-	var { basic_info, error } = await get_basic_info(req.body.access_token);
+	var { basic_info, error } = await get_basic_info(
+		req.body.access_token,
+		req.body.page_id
+	);
 	if (basic_info === null) {
 		return res.status(500).json(error);
 	}
@@ -29,19 +30,23 @@ export default async (req, res) => {
 
 	var { categories, error } = await get_categories(
 		req.body.access_token,
+		req.body.page_id,
 		facebook_categories
 	);
 	if (categories === null) {
 		return res.status(500).json(error);
 	}
 
-	var { engagement_score, error } = await get_engagement(req.body.access_token);
+	var { engagement_score, error } = await get_engagement(
+		req.body.access_token,
+		req.body.page_id
+	);
 	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
 	if (engagement_score === null) {
 		return res.status(500).json(error);
 	}
 
-	// var all_comments = await get_all_comments_of_posts(req.body.access_token);
+	// var all_comments = await get_all_comments_of_posts(req.body.access_token, req.body.page_id);
 	// if(!all_comments) { return res.status(500).json(error);}
 
 	// --------------- Map followers to influencer size ---------------
@@ -95,12 +100,12 @@ export default async (req, res) => {
 };
 
 // name, link, followers_count, category_list
-async function get_basic_info(access_token) {
+async function get_basic_info(access_token, page_id) {
 	console.log('get_basic_info');
 	try {
 		// lấy tiếng anh để dễ map category
 		var res = await FB.api(
-			PAGE_ID +
+			page_id +
 				'?fields=id,name,link,picture,followers_count,verification_status,location,category_list&locale=en_US',
 			{ access_token: access_token }
 		);
@@ -119,12 +124,12 @@ async function get_basic_info(access_token) {
 	}
 }
 
-// --------------- Get top 5 categories (primary category: by facebook api & secondary category: by posts) ---------------
-async function get_categories(access_token, facebook_categories) {
+// --------------- Get top 5 categories (primary category: by posts & secondary category: by facebook api) ---------------
+async function get_categories(access_token, page_id, facebook_categories) {
 	console.log('get_categories');
 	try {
-		// --------------- Get second categories ---------------
-		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
+		// --------------- Get primary categories ---------------
+		var res1 = await FB.api(page_id + '/feed', { access_token: access_token });
 
 		// console.log(res1);
 
@@ -163,10 +168,10 @@ async function get_categories(access_token, facebook_categories) {
 	// console.log('post categories');
 	// console.log(res2.data.categories);
 
-	console.log('secondary categories');
+	console.log('primary categories');
 	var post_categories = res2.data.categories;
 	console.log(post_categories);
-	console.log('primary categories');
+	console.log('secondary categories');
 	var facebook_fanpage_categories =
 		FacebookUtil.mapFacebookCategories(facebook_categories);
 	console.log(facebook_fanpage_categories);
@@ -210,12 +215,12 @@ async function get_categories(access_token, facebook_categories) {
 	return { categories: top_categories };
 }
 
-async function get_engagement(access_token) {
+async function get_engagement(access_token, page_id) {
 	console.log('get_engagement');
 	// ko nên dùng hàm callback ở trong hàm async (sẽ ko return đc)
 	try {
 		var res = await FB.api(
-			PAGE_ID +
+			page_id +
 				'/feed?fields=insights.metric(post_impressions_unique,post_engaged_users),message,created_time',
 			{ access_token: access_token }
 		);
@@ -266,11 +271,11 @@ async function get_engagement(access_token) {
 	return { engagement_score: engagement_score };
 }
 
-async function get_all_comments_of_posts(access_token) {
+async function get_all_comments_of_posts(access_token, page_id) {
 	console.log('get_all_comments_of_posts');
 	try {
 		var res = await FB.api(
-			PAGE_ID +
+			page_id +
 				'/feed?fields=comments.summary(1).filter(stream), created_time, message',
 			{ access_token: access_token }
 		);

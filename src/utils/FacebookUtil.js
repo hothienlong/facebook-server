@@ -188,7 +188,6 @@ export default class FacebookUtil {
 					'Home & Garden Website',
 					'Home & Garden Store',
 					'Inn',
-					'Kitchen/cooking',
 					'Kitchen & Bath Contractor',
 					'Landlord & Tenant Lawyer',
 					'Lighting Store',

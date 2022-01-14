@@ -1,10 +1,11 @@
 const FB = require('fb');
+import { APP_ID, APP_SECRET } from '../../constants'
 
 export default async (req, res) => {
 	try {
 		var resFb = await FB.api('oauth/access_token', {
-			client_id: req.body.client_id,
-			client_secret: req.body.client_secret,
+			client_id: APP_ID,
+			client_secret: APP_SECRET,
 			grant_type: 'fb_exchange_token',
 			fb_exchange_token: req.body.existing_access_token,
 		});
