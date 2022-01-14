@@ -18,15 +18,6 @@ export default async (req, res) => {
 	console.log('updateInfluencerController');
 	console.log(PAGE_ID);
 
-	var access_token = await updateToken(
-		req.body.client_id,
-		req.body.client_secret,
-		req.body.refresh_token
-	);
-
-	console.log(access_token);
-	return;
-
 	var { engagement_score, error } = await get_engagement(req.body.access_token);
 	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
 	if (engagement_score === null) {
