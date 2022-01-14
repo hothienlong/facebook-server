@@ -7,20 +7,21 @@ export const updateInfluencer = async (
 	social_name,
 	profile_link,
 	followers,
-	engagement_score,
-	influencer_size
+	influencer_size,
+	categories,
+	engagement_score
 ) => {
 	try {
 		console.log('updateInfluencer service');
 
 		console.log(influencer_id);
 
+		// --------------- Find Influencer ---------------
 		// get influencer hasn't connected facebook yet
 		const influencer = await influencerModel.findOne({
 			_id: ObjectID(influencer_id),
 			'social_network.channel_name': { $ne: 'facebook' },
 		});
-		// console.log(influencer);
 
 		if (!influencer) {
 			return {
@@ -29,6 +30,9 @@ export const updateInfluencer = async (
 			};
 		}
 
+		// console.log(influencer);
+
+		// --------------- Update social network ---------------
 		await influencer.social_network.push({
 			channel_name: 'facebook',
 			social_name: social_name,
@@ -39,12 +43,28 @@ export const updateInfluencer = async (
 
 		// if influencer hasn't connected facebook -> add a new one
 
+		// --------------- Update influencer size ---------------
 		if (
 			INFLUENCER_SIZE[influencer.influencer_size] <
 			INFLUENCER_SIZE[influencer_size]
 		) {
 			await influencer.updateOne(
 				{ influencer_size: influencer_size },
+				{ new: true }
+			);
+		}
+
+		// --------------- Update categories ---------------
+		console.log('category influencer');
+		// console.log(influencer.user_detail.categories);
+		var merge_categories = influencer.user_detail.categories.concat(categories);
+		var unique_merge_categories = [...new Set(merge_categories)];
+		// console.log(merge_categories);
+		// console.log(unique_merge_categories);
+
+		if (influencer.user_detail.categories !== unique_merge_categories) {
+			await influencer.updateOne(
+				{ 'user_detail.categories': unique_merge_categories },
 				{ new: true }
 			);
 		}

@@ -65,7 +65,7 @@ export const influencerSchema = new Influencers({
 			career: { type: String, required: true },
 			gender: { type: Number, required: true, index: true },
 			images: [{ type: String }],
-			category: { type: [{ type: String }], index: true },
+			categories: { type: [{ type: String }], index: true },
 			bio: { type: String },
 			nationality: { type: String },
 			city: { type: String },

@@ -19,12 +19,6 @@ export default async (req, res) => {
 	console.log('updateInfluencerController');
 	console.log(PAGE_ID);
 
-	var { engagement_score, error } = await get_engagement(req.body.access_token);
-	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
-	if (engagement_score === null) {
-		return res.status(500).json(error);
-	}
-
 	var { basic_info, error } = await get_basic_info(req.body.access_token);
 	if (basic_info === null) {
 		return res.status(500).json(error);
@@ -37,6 +31,12 @@ export default async (req, res) => {
 		facebook_categories
 	);
 	if (categories === null) {
+		return res.status(500).json(error);
+	}
+
+	var { engagement_score, error } = await get_engagement(req.body.access_token);
+	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
+	if (engagement_score === null) {
 		return res.status(500).json(error);
 	}
 
@@ -80,8 +80,9 @@ export default async (req, res) => {
 		basic_info.name,
 		basic_info.link,
 		basic_info.followers_count,
-		engagement_score,
-		influencer_size
+		influencer_size,
+		categories,
+		engagement_score
 	);
 
 	if (!status) {
