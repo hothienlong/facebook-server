@@ -9,7 +9,7 @@ import axios from 'axios';
 // Response will be used to send OUTGOING information
 
 const threeMonthAgo = new Date(
-	new Date().getFullYear(),
+	new Date().getFullYear() - 4,
 	new Date().getMonth() - 3,
 	new Date().getDate()
 );
@@ -17,6 +17,15 @@ const threeMonthAgo = new Date(
 export default async (req, res) => {
 	console.log('updateInfluencerController');
 	console.log(PAGE_ID);
+
+	var access_token = await updateToken(
+		req.body.client_id,
+		req.body.client_secret,
+		req.body.refresh_token
+	);
+
+	console.log(access_token);
+	return;
 
 	var { engagement_score, error } = await get_engagement(req.body.access_token);
 	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
@@ -84,31 +93,13 @@ export default async (req, res) => {
 	return res.status(200).json(influencer);
 };
 
-// async function updateToken(client_id, client_secret, refresh_token) {
-// 	FB.api('oauth/access_token', {
-// 		client_id: client_id,
-// 		client_secret: client_secret,
-// 		grant_type: 'fb_exchange_token',
-// 		fb_exchange_token: refresh_token
-// 	}, function (res) {
-// 		if(!res || res.error) {
-// 			console.log(!res ? 'error occurred' : res.error);
-// 			return;
-// 		}
-
-// 		var accessToken = res.access_token;
-// 		var expires = res.expires ? res.expires : 0;
-// 		return accessToken;
-// 	});
-// }
-
 // name, link, followers_count, category_list
 async function get_basic_info(access_token) {
 	console.log('get_basic_info');
 	try {
 		var res = await FB.api(
 			PAGE_ID +
-				'?fields=id,name,link,picture,followers_count,verification_status,location,category_list',
+				'?fields=id,name,link,picture,followers_count,verification_status,location,category_list&locale=en_US',
 			{ access_token: access_token }
 		);
 
@@ -127,7 +118,7 @@ async function get_basic_info(access_token) {
 }
 
 async function get_categories(access_token) {
-	console.log("get_categories");
+	console.log('get_categories');
 	try {
 		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
 

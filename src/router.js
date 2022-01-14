@@ -1,11 +1,13 @@
 import express from 'express';
 import userRouter from './routes/users';
 import influencerRouter from './routes/influencers';
+import authRouter from './routes/authRouter';
 
 const router = express.Router();
 
 router.use('/users', userRouter);
 router.use('/influencers', influencerRouter);
+router.use('/auth', authRouter);
 
 // Add more routes by doing like this:
 // router.use("/products", productRouter);
