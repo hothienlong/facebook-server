@@ -25,7 +25,7 @@ export const updateInfluencer = async (
 
 		if (!influencer) {
 			return {
-				status: false,
+				influencer: null,
 				message: 'Influencer has connected facebook already',
 			};
 		}
@@ -80,9 +80,9 @@ export const updateInfluencer = async (
 
 		console.log(new_influencer);
 
-		return { status: true, influencer: new_influencer };
+		return { influencer: new_influencer };
 	} catch (error) {
 		console.error(error);
-		return { status: false, message: error };
+		return { influencer: null, message: error };
 	}
 };

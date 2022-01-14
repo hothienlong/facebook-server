@@ -19,6 +19,7 @@ export default async (req, res) => {
 	console.log('updateInfluencerController');
 	console.log(PAGE_ID);
 
+	// --------------- Get param to update by facebook api ---------------
 	var { basic_info, error } = await get_basic_info(req.body.access_token);
 	if (basic_info === null) {
 		return res.status(500).json(error);
@@ -43,6 +44,7 @@ export default async (req, res) => {
 	// var all_comments = await get_all_comments_of_posts(req.body.access_token);
 	// if(!all_comments) { return res.status(500).json(error);}
 
+	// --------------- Map followers to influencer size ---------------
 	// followers -> influencer_size
 	var influencer_size = 'Nano';
 	if (basic_info.followers_count >= 0 && basic_info.followers_count < 5000) {
@@ -74,8 +76,9 @@ export default async (req, res) => {
 	console.log('influencer_size');
 	console.log(influencer_size);
 
-	// sentiment, category
-	const { influencer, status, message } = await updateInfluencer(
+	// --------------- Update Influencer ---------------
+	// sentiment
+	const { influencer, message } = await updateInfluencer(
 		req.body.influencer_id,
 		basic_info.name,
 		basic_info.link,
@@ -85,7 +88,7 @@ export default async (req, res) => {
 		engagement_score
 	);
 
-	if (!status) {
+	if (influencer === null) {
 		return res.status(500).json({ message });
 	}
 	return res.status(200).json(influencer);
@@ -95,6 +98,7 @@ export default async (req, res) => {
 async function get_basic_info(access_token) {
 	console.log('get_basic_info');
 	try {
+		// lấy tiếng anh để dễ map category
 		var res = await FB.api(
 			PAGE_ID +
 				'?fields=id,name,link,picture,followers_count,verification_status,location,category_list&locale=en_US',
@@ -115,9 +119,11 @@ async function get_basic_info(access_token) {
 	}
 }
 
+// --------------- Get top 5 categories (primary category: by facebook api & secondary category: by posts) ---------------
 async function get_categories(access_token, facebook_categories) {
 	console.log('get_categories');
 	try {
+		// --------------- Get second categories ---------------
 		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
 
 		// console.log(res1);
@@ -147,6 +153,7 @@ async function get_categories(access_token, facebook_categories) {
 	// console.log('posts');
 	// console.log(posts);
 
+	// --------------- Get 2 list category ---------------
 	const res2 = await axios({
 		method: 'post',
 		url: `http://localhost:1000/get_categories_with_count`,
