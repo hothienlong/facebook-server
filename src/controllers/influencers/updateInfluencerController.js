@@ -3,6 +3,7 @@ import { updateInfluencer } from '../../services/influencers';
 import { PAGE_ID } from '../../constants';
 const FB = require('fb');
 import axios from 'axios';
+import FacebookUtil from '../../utils/FacebookUtil';
 
 // This is where a route is handled, the function MUST accept 2 params request and response.
 // Request will include all the information of the INCOMING request
@@ -29,7 +30,12 @@ export default async (req, res) => {
 		return res.status(500).json(error);
 	}
 
-	var { categories, error } = await get_categories(req.body.access_token);
+	var facebook_categories = basic_info.category_list.map((cate) => cate.name);
+
+	var { categories, error } = await get_categories(
+		req.body.access_token,
+		facebook_categories
+	);
 	if (categories === null) {
 		return res.status(500).json(error);
 	}
@@ -108,7 +114,7 @@ async function get_basic_info(access_token) {
 	}
 }
 
-async function get_categories(access_token) {
+async function get_categories(access_token, facebook_categories) {
 	console.log('get_categories');
 	try {
 		var res1 = await FB.api(PAGE_ID + '/feed', { access_token: access_token });
@@ -146,10 +152,54 @@ async function get_categories(access_token) {
 		data: { texts: posts },
 	});
 
-	console.log('categories');
-	console.log(res2.data.categories);
+	// console.log('post categories');
+	// console.log(res2.data.categories);
 
-	return { categories: res2.data.categories };
+	console.log('secondary categories');
+	var post_categories = res2.data.categories;
+	console.log(post_categories);
+	console.log('primary categories');
+	var facebook_fanpage_categories =
+		FacebookUtil.mapFacebookCategories(facebook_categories);
+	console.log(facebook_fanpage_categories);
+
+	// ------- Merge 2 list categories ----------
+
+	for (var key in post_categories) {
+		// console.log(key);
+		// console.log(post_categories[key]);
+		if (facebook_fanpage_categories.includes(key)) {
+			post_categories[key] = post_categories[key] * 2;
+		}
+	}
+
+	// https://www.educative.io/edpresso/how-can-we-sort-a-dictionary-by-value-in-javascript
+	// Create items array
+	var final_categories = Object.keys(post_categories).map(function (key) {
+		return [key, post_categories[key]];
+	});
+
+	// console.log('Creating');
+	// console.log(final_categories);
+
+	// Sort the array based on the second element
+	// Function used to determine the order of the elements.
+	// It is expected to return a negative value if the first argument is less than the second argument, zero if they're equal, and a positive value otherwise.
+	// If omitted, the elements are sorted in ascending, ASCII character order.
+	final_categories.sort(function (first, second) {
+		return second[1] - first[1];
+	});
+
+	// Create a new array with only the first 5 items
+	var top_categories = final_categories.slice(0, 5);
+	console.log('5 first categories');
+	console.log(final_categories.slice(0, 5));
+
+	top_categories = top_categories.map((category) => category[0]);
+	console.log('list 5 first categories');
+	console.log(top_categories);
+
+	return { categories: top_categories };
 }
 
 async function get_engagement(access_token) {
