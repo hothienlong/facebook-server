@@ -15,7 +15,7 @@ const threeMonthAgo = new Date(
 );
 
 export default async (req, res) => {
-	console.log('updateInfluencerController');
+	console.log('connectFacebookController');
 
 	// --------------- Get param to update by facebook api ---------------
 	var { basic_info, error } = await get_basic_info(

@@ -1,8 +1,8 @@
 import express from 'express';
-import updateInfluencerController from '../controllers/influencers/updateInfluencerController';
+import connectFacebookController from '../controllers/influencers/connectFacebookController';
 
 const router = express.Router();
 
-router.post('/updateInfluencer', updateInfluencerController);
+router.post('/connectFacebook', connectFacebookController);
 
 export default router;
