@@ -1,12 +1,14 @@
 import express from 'express';
 import userRouter from './routes/users';
 import influencerRouter from './routes/influencers';
+import fanpageRouter from './routes/fanpage';
 import authRouter from './routes/authRouter';
 
 const router = express.Router();
 
 router.use('/users', userRouter);
 router.use('/influencers', influencerRouter);
+router.use('/fanpage', fanpageRouter);
 router.use('/auth', authRouter);
 
 // Add more routes by doing like this:
