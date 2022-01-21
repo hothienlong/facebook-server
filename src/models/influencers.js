@@ -10,17 +10,19 @@ export const influencerSchema = new Influencers({
 	social_network: [
 		{
 			channel_name: { type: String, required: true, index: true },
-			profile_link: { type: String, required: true },
+			profile_link: { type: String },
 			followers: { type: String },
 			total_post: { type: Number },
 			engagement_score: { type: Number },
 			sentiment_score: { type: Number },
 			avg_view: { type: String },
-			channel_type: { type: String },
-			rating: { type: String },
-			rank_country: { type: String },
-			social_name: { type: String },
 			total_video: { type: String },
+			social_name: { type: String },
+			description: { type: String },
+			fScore: { type: Number },
+			error_link: { type: Boolean },
+			user_name: { type: String },
+			social_id: { type: String },
 			subscribersWeekly: [
 				{
 					date: { type: String },
@@ -44,13 +46,6 @@ export const influencerSchema = new Influencers({
 	influencer_size: { type: String, index: true },
 	inf_score: { type: Number },
 	campaign_rating: { type: Number },
-	favorite_campaigns: [{ type: Schema.Types.ObjectId }],
-	block_companies: [
-		{
-			company_id: { type: Schema.Types.ObjectId, required: true },
-			reason: { type: String, required: true },
-		},
-	],
 	report_companies: [
 		{
 			company_id: { type: Schema.Types.ObjectId, required: true },
@@ -67,15 +62,23 @@ export const influencerSchema = new Influencers({
 			images: [{ type: String }],
 			categories: { type: [{ type: String }], index: true },
 			bio: { type: String },
-			nationality: { type: String },
 			city: { type: String },
 			religion: { type: String },
 			marital_status: { type: String },
 			avatar: { type: String },
+			nationality: { type: String },
+			rank: { type: String, required: true },
 		},
 		required: true,
 	},
 	campaigns_id: [{ type: Schema.Types.ObjectId }],
+	notifications: [
+		{
+			title: { type: String, required: true },
+			content: { type: String, required: true },
+			noti_date: { type: Date, required: true },
+		},
+	],
 });
 
 const influencerModel = mongoose.model('influencers', influencerSchema);

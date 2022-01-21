@@ -9,6 +9,7 @@ export const updateInfluencer = async (
 	followers,
 	influencer_size,
 	categories,
+	total_post,
 	engagement_score
 ) => {
 	try {
@@ -38,6 +39,7 @@ export const updateInfluencer = async (
 			social_name: social_name,
 			profile_link: profile_link,
 			followers: followers,
+			total_post: total_post,
 			engagement_score: engagement_score,
 		});
 

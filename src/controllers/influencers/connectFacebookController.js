@@ -37,7 +37,7 @@ export default async (req, res) => {
 		return res.status(500).json(error);
 	}
 
-	var { engagement_score, error } = await get_engagement(
+	var { engagement_score, post_count, error } = await get_engagement(
 		req.body.access_token,
 		req.body.page_id
 	);
@@ -90,6 +90,7 @@ export default async (req, res) => {
 		basic_info.followers_count,
 		influencer_size,
 		categories,
+		post_count,
 		engagement_score
 	);
 
@@ -144,75 +145,80 @@ async function get_categories(access_token, page_id, facebook_categories) {
 		}
 	}
 
-	var posts = [];
-	for (let i = 0; i < res1.data.length; i++) {
-		if (res1.data[i].message === undefined) continue;
-		// console.log(threeMonthAgo - new Date(res1.data[i].created_time));
+	// luôn đảm bảo try catch phủ lấp
+	try {
+		var posts = [];
+		for (let i = 0; i < res1.data.length; i++) {
+			if (res1.data[i].message === undefined) continue;
+			// console.log(threeMonthAgo - new Date(res1.data[i].created_time));
 
-		// get posts in 3 months ago
-		if (threeMonthAgo - new Date(res1.data[i].created_time) > 0) continue;
+			// get posts in 3 months ago
+			if (threeMonthAgo - new Date(res1.data[i].created_time) > 0) continue;
 
-		posts.push(res1.data[i].message);
-	}
-
-	// console.log('posts');
-	// console.log(posts);
-
-	// --------------- Get 2 list category ---------------
-	const res2 = await axios({
-		method: 'post',
-		url: `http://localhost:1000/get_categories_with_count`,
-		data: { texts: posts },
-	});
-
-	// console.log('post categories');
-	// console.log(res2.data.categories);
-
-	console.log('primary categories');
-	var post_categories = res2.data.categories;
-	console.log(post_categories);
-	console.log('secondary categories');
-	var facebook_fanpage_categories =
-		FacebookUtil.mapFacebookCategories(facebook_categories);
-	console.log(facebook_fanpage_categories);
-
-	// ------- Merge 2 list categories ----------
-
-	for (var key in post_categories) {
-		// console.log(key);
-		// console.log(post_categories[key]);
-		if (facebook_fanpage_categories.includes(key)) {
-			post_categories[key] = post_categories[key] * 2;
+			posts.push(res1.data[i].message);
 		}
+
+		// console.log('posts');
+		// console.log(posts);
+
+		// --------------- Get 2 list category ---------------
+		const res2 = await axios({
+			method: 'post',
+			url: `http://localhost:1000/get_categories_with_count`,
+			data: { texts: posts },
+		});
+
+		// console.log('post categories');
+		// console.log(res2.data.categories);
+
+		console.log('primary categories');
+		var post_categories = res2.data.categories;
+		console.log(post_categories);
+		console.log('secondary categories');
+		var facebook_fanpage_categories =
+			FacebookUtil.mapFacebookCategories(facebook_categories);
+		console.log(facebook_fanpage_categories);
+
+		// ------- Merge 2 list categories ----------
+
+		for (var key in post_categories) {
+			// console.log(key);
+			// console.log(post_categories[key]);
+			if (facebook_fanpage_categories.includes(key)) {
+				post_categories[key] = post_categories[key] * 2;
+			}
+		}
+
+		// https://www.educative.io/edpresso/how-can-we-sort-a-dictionary-by-value-in-javascript
+		// Create items array
+		var final_categories = Object.keys(post_categories).map(function (key) {
+			return [key, post_categories[key]];
+		});
+
+		// console.log('Creating');
+		// console.log(final_categories);
+
+		// Sort the array based on the second element
+		// Function used to determine the order of the elements.
+		// It is expected to return a negative value if the first argument is less than the second argument, zero if they're equal, and a positive value otherwise.
+		// If omitted, the elements are sorted in ascending, ASCII character order.
+		final_categories.sort(function (first, second) {
+			return second[1] - first[1];
+		});
+
+		// Create a new array with only the first 5 items
+		var top_categories = final_categories.slice(0, 5);
+		console.log('5 first categories');
+		console.log(final_categories.slice(0, 5));
+
+		top_categories = top_categories.map((category) => category[0]);
+		console.log('list 5 first categories');
+		console.log(top_categories);
+
+		return { categories: top_categories };
+	} catch (error) {
+		return { error: error.message, categories: null };
 	}
-
-	// https://www.educative.io/edpresso/how-can-we-sort-a-dictionary-by-value-in-javascript
-	// Create items array
-	var final_categories = Object.keys(post_categories).map(function (key) {
-		return [key, post_categories[key]];
-	});
-
-	// console.log('Creating');
-	// console.log(final_categories);
-
-	// Sort the array based on the second element
-	// Function used to determine the order of the elements.
-	// It is expected to return a negative value if the first argument is less than the second argument, zero if they're equal, and a positive value otherwise.
-	// If omitted, the elements are sorted in ascending, ASCII character order.
-	final_categories.sort(function (first, second) {
-		return second[1] - first[1];
-	});
-
-	// Create a new array with only the first 5 items
-	var top_categories = final_categories.slice(0, 5);
-	console.log('5 first categories');
-	console.log(final_categories.slice(0, 5));
-
-	top_categories = top_categories.map((category) => category[0]);
-	console.log('list 5 first categories');
-	console.log(top_categories);
-
-	return { categories: top_categories };
 }
 
 async function get_engagement(access_token, page_id) {
@@ -227,6 +233,7 @@ async function get_engagement(access_token, page_id) {
 
 		// console.log(res);
 	} catch (error) {
+		console.log(error);
 		if (error.response.error.code === 'ETIMEDOUT') {
 			console.log('request timeout');
 			return { error: error.response.error, engagement_score: null };
@@ -236,39 +243,43 @@ async function get_engagement(access_token, page_id) {
 		}
 	}
 
-	var engagement_score = 0;
-	var post_count = 0;
+	try {
+		var engagement_score = 0;
+		var post_count = 0;
 
-	for (let i = 0; i < res.data.length; i++) {
-		// console.log(threeMonthAgo - new Date(res.data[i].created_time));
+		for (let i = 0; i < res.data.length; i++) {
+			// console.log(threeMonthAgo - new Date(res.data[i].created_time));
 
-		// get insight in 3 months ago
-		if (threeMonthAgo - new Date(res.data[i].created_time) > 0) continue;
+			// get insight in 3 months ago
+			if (threeMonthAgo - new Date(res.data[i].created_time) > 0) continue;
 
-		var reach = res.data[i].insights.data[0].values[0].value;
-		var engaged_user = res.data[i].insights.data[1].values[0].value;
+			var reach = res.data[i].insights.data[0].values[0].value;
+			var engaged_user = res.data[i].insights.data[1].values[0].value;
 
-		// mẫu khác 0
-		if (reach === 0) continue;
+			// mẫu khác 0
+			if (reach === 0) continue;
 
-		// console.log(engaged_user + ' ' + reach);
+			// console.log(engaged_user + ' ' + reach);
 
-		// luôn bé hơn 1
-		engagement_score = engagement_score + engaged_user / reach;
+			// luôn bé hơn 1
+			engagement_score = engagement_score + engaged_user / reach;
 
-		post_count++;
-		// console.log(engaged_user / reach);
+			post_count++;
+			// console.log(engaged_user / reach);
 
-		// console.log(engagement_score);
+			// console.log(engagement_score);
+		}
+
+		// trung bình cộng
+		if (post_count !== 0)
+			engagement_score = (engagement_score / post_count).toFixed(2) * 100;
+		console.log('engagement_score');
+		console.log(engagement_score);
+
+		return { engagement_score: engagement_score, post_count: post_count };
+	} catch (error) {
+		return { error: error.message, engagement_score: null };
 	}
-
-	// trung bình cộng
-	if (post_count !== 0)
-		engagement_score = (engagement_score / post_count).toFixed(2) * 100;
-	console.log('engagement_score');
-	console.log(engagement_score);
-
-	return { engagement_score: engagement_score };
 }
 
 async function get_all_comments_of_posts(access_token, page_id) {
