@@ -3,7 +3,7 @@ import mongoose, { Schema } from 'mongoose';
 const Influencers = mongoose.Schema;
 
 export const influencerSchema = new Influencers({
-	email: { type: String, required: true },
+	email: { type: String, required: true, index: true },
 	password: { type: String, required: true },
 	accessToken: { type: String, required: true },
 	refreshToken: { type: String, required: true },
@@ -21,26 +21,28 @@ export const influencerSchema = new Influencers({
 			description: { type: String },
 			fScore: { type: Number },
 			error_link: { type: Boolean },
-			user_name: { type: String },
-			social_id: { type: String },
-			subscribersWeekly: [
-				{
-					date: { type: String },
-					subscribers: { type: Number },
-				},
-			],
-			subscribersMonthly: [
-				{
-					date: { type: String },
-					subscribers: { type: Number },
-				},
-			],
-			subscribersGainedWeekly: [
-				{
-					date: { type: String },
-					subscribers: { type: Number },
-				},
-			],
+			user_name: { type: String }, // user name of twitter
+			social_id: { type: String }, // channel id, id of twitter
+			time_update: { type: Date },
+			is_crawl: { type: Boolean },
+			// subscribersWeekly: [
+			// 	{
+			// 		date: { type: String },
+			// 		subscribers: { type: Number },
+			// 	},
+			// ],
+			// subscribersMonthly: [
+			// 	{
+			// 		date: { type: String },
+			// 		subscribers: { type: Number },
+			// 	},
+			// ],
+			// subscribersGainedWeekly: [
+			// 	{
+			// 		date: { type: String },
+			// 		subscribers: { type: Number },
+			// 	},
+			// ],
 		},
 	],
 	influencer_size: { type: String, index: true },
@@ -66,8 +68,8 @@ export const influencerSchema = new Influencers({
 			religion: { type: String },
 			marital_status: { type: String },
 			avatar: { type: String },
-			nationality: { type: String },
 			rank: { type: String, required: true },
+			rank_score: { type: Number, required: true },
 		},
 		required: true,
 	},

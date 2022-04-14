@@ -1,8 +1,8 @@
 /* eslint-disable no-redeclare */
-import { updateInfluencer } from '../../services/influencers';
-const FB = require('fb');
 import axios from 'axios';
+import { updateInfluencer } from '../../services/influencers';
 import FacebookUtil from '../../utils/FacebookUtil';
+const FB = require('fb');
 
 // This is where a route is handled, the function MUST accept 2 params request and response.
 // Request will include all the information of the INCOMING request
@@ -18,10 +18,11 @@ export default async (req, res) => {
 	console.log('connectFacebookController');
 
 	// --------------- Get param to update by facebook api ---------------
-	var { basic_info, error } = await get_basic_info(
-		req.body.access_token,
-		req.body.page_id
-	);
+	const { access_token, page_id } = req.body;
+
+	console.log({ access_token, page_id });
+
+	var { basic_info, error } = await get_basic_info(access_token, page_id);
 	if (basic_info === null) {
 		return res.status(500).json(error);
 	}
@@ -29,17 +30,18 @@ export default async (req, res) => {
 	var facebook_categories = basic_info.category_list.map((cate) => cate.name);
 
 	var { categories, error } = await get_categories(
-		req.body.access_token,
-		req.body.page_id,
+		access_token,
+		page_id,
 		facebook_categories
 	);
+
 	if (categories === null) {
 		return res.status(500).json(error);
 	}
 
 	var { engagement_score, post_count, error } = await get_engagement(
-		req.body.access_token,
-		req.body.page_id
+		access_token,
+		page_id
 	);
 	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
 	if (engagement_score === null) {
@@ -91,7 +93,8 @@ export default async (req, res) => {
 		influencer_size,
 		categories,
 		post_count,
-		engagement_score
+		engagement_score,
+		page_id
 	);
 
 	if (influencer === null) {

@@ -10,7 +10,8 @@ export const updateInfluencer = async (
 	influencer_size,
 	categories,
 	total_post,
-	engagement_score
+	engagement_score,
+	page_id
 ) => {
 	try {
 		console.log('updateInfluencer service');
@@ -21,27 +22,45 @@ export const updateInfluencer = async (
 		// get influencer hasn't connected facebook yet
 		const influencer = await influencerModel.findOne({
 			_id: ObjectID(influencer_id),
-			'social_network.channel_name': { $ne: 'facebook' },
+			//'social_network.channel_name': { $ne: 'facebook' },
 		});
 
-		if (!influencer) {
-			return {
-				influencer: null,
-				message: 'Influencer has connected facebook already',
-			};
-		}
+		/*
+ 		if (!influencer) {
+ 			return {
+ 				influencer: null,
+ 				message: 'Influencer has connected facebook already',
+ 			};
+ 		} 
+*/
 
-		// console.log(influencer);
+		console.log(influencer);
 
 		// --------------- Update social network ---------------
-		await influencer.social_network.push({
-			channel_name: 'facebook',
-			social_name: social_name,
-			profile_link: profile_link,
-			followers: followers,
-			total_post: total_post,
-			engagement_score: engagement_score,
+		const listSocial = influencer.social_network;
+
+		const newListSocial = listSocial.map((social) => {
+			return social.channel_name === 'facebook'
+				? {
+						social_name: social_name,
+						profile_link: profile_link,
+						followers: followers,
+						total_post: total_post,
+						engagement_score: engagement_score,
+						channel_name: 'facebook',
+						social_id: page_id,
+						error_link: false,
+						is_crawl: false,
+				  }
+				: social;
 		});
+
+		console.log({ newListSocial });
+
+		await influencer.updateOne(
+			{ social_network: newListSocial },
+			{ new: true }
+		);
 
 		// if influencer hasn't connected facebook -> add a new one
 
