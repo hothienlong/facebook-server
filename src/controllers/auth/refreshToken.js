@@ -1,5 +1,5 @@
 const FB = require('fb');
-import { APP_ID, APP_SECRET } from '../../constants'
+import { APP_ID, APP_SECRET } from '../../constants';
 
 export default async (req, res) => {
 	try {

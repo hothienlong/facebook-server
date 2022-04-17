@@ -26,3 +26,5 @@ export const LIST_CATEGORIES = {
 	thoitrang: 'Thời trang',
 	thucpham_douong: 'Ăn uống',
 };
+
+export const SCOPE = ['public_profile', 'email'];

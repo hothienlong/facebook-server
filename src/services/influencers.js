@@ -77,6 +77,7 @@ export const updateInfluencer = async (
 
 		// --------------- Update categories ---------------
 		console.log('category influencer');
+		console.log({ categories });
 		// console.log(influencer.user_detail.categories);
 		var merge_categories = influencer.user_detail.categories.concat(categories);
 		var unique_merge_categories = [...new Set(merge_categories)];
