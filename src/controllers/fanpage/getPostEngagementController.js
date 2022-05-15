@@ -15,6 +15,7 @@ export default async (req, res) => {
 			access_token,
 			post_id
 		);
+		console.log({ reaction_value });
 		if (reaction_count === null) {
 			return res.status(500).json(error);
 		}
@@ -24,6 +25,8 @@ export default async (req, res) => {
 			access_token,
 			post_id
 		);
+		console.log({ comment_value });
+
 		if (comment_count === null) {
 			return res.status(500).json(error);
 		}

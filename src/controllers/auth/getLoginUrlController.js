@@ -4,7 +4,6 @@ import { APP_ID, SCOPE } from './../../constants';
 export default async (req, res) => {
 	try {
 		const redirectUrl = req.body.redirectUrl;
-
 		var resFb = await FB.getLoginUrl({
 			client_id: APP_ID,
 			scope: SCOPE,

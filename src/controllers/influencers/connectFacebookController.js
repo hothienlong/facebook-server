@@ -285,24 +285,27 @@ async function get_engagement(access_token, page_id) {
 	}
 }
 
-async function get_all_comments_of_posts(access_token, page_id) {
-	console.log('get_all_comments_of_posts');
-	try {
-		var res = await FB.api(
-			page_id +
-				'/feed?fields=comments.summary(1).filter(stream), created_time, message',
-			{ access_token: access_token }
-		);
-
-		// console.log(JSON.stringify(res, null, 2));
-		// console.log(res);
-	} catch (error) {
-		if (error.response.error.code === 'ETIMEDOUT') {
-			console.log('request timeout');
-			return { error: error.response.error, all_comments: null };
-		} else {
-			console.log('error', error.message);
-			return { error: error.message, all_comments: null };
-		}
-	}
-}
+/*
+ async function get_all_comments_of_posts(access_token, page_id) {
+ 	console.log('get_all_comments_of_posts');
+ 	try {
+ 		var res = await FB.api(
+ 			page_id +
+ 				'/feed?fields=comments.summary(1).filter(stream), created_time, message',
+ 			{ access_token: access_token }
+ 		);
+ 
+ 		// console.log(JSON.stringify(res, null, 2));
+ 		console.log(res);
+ 	} catch (error) {
+ 		if (error.response.error.code === 'ETIMEDOUT') {
+ 			console.log('request timeout');
+ 			return { error: error.response.error, all_comments: null };
+ 		} else {
+ 			console.log('error', error.message);
+ 			return { error: error.message, all_comments: null };
+ 		}
+ 	}
+ }
+  
+*/

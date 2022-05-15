@@ -2,8 +2,9 @@ module.exports = {
 	env: {
 		es2021: true,
 		node: true,
+		jest: true,
 	},
-	extends: ["eslint:recommended",],
+	extends: ["eslint:recommended"],
 	parser: "babel-eslint",
 	parserOptions: {
 		ecmaVersion: 12,
@@ -24,7 +25,6 @@ module.exports = {
 				useTabs: true,
 			},
 		],
-		// eslint-disable-next-line @typescript-eslint/no-var-requires
-		...require("eslint-config-prettier").rules,
+		...require('eslint-config-prettier').rules,
 	},
 };
