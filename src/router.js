@@ -11,7 +11,7 @@ router.use('/influencers', influencerRouter);
 router.use('/fanpage', fanpageRouter);
 router.use('/auth', authRouter);
 router.get('/', function (req, res) {
-	res.status(200).send('<h1>Welcome to Classification server</h1>');
+	res.status(200).send('<h1>Welcome to Facebook server</h1>');
 });
 // Add more routes by doing like this:
 // router.use("/products", productRouter);
