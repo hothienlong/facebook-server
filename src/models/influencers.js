@@ -25,24 +25,7 @@ export const influencerSchema = new Influencers({
 			social_id: { type: String }, // channel id, id of twitter
 			time_update: { type: Date },
 			is_crawl: { type: Boolean },
-			// subscribersWeekly: [
-			// 	{
-			// 		date: { type: String },
-			// 		subscribers: { type: Number },
-			// 	},
-			// ],
-			// subscribersMonthly: [
-			// 	{
-			// 		date: { type: String },
-			// 		subscribers: { type: Number },
-			// 	},
-			// ],
-			// subscribersGainedWeekly: [
-			// 	{
-			// 		date: { type: String },
-			// 		subscribers: { type: Number },
-			// 	},
-			// ],
+			access_token: { type: String }, // facebook access token
 		},
 	],
 	influencer_size: { type: String, index: true },
@@ -70,6 +53,7 @@ export const influencerSchema = new Influencers({
 			avatar: { type: String },
 			rank: { type: String, required: true },
 			rank_score: { type: Number, required: true },
+			list_chat_user_id: [{ type: String }],
 		},
 		required: true,
 	},
@@ -81,6 +65,7 @@ export const influencerSchema = new Influencers({
 			noti_date: { type: Date, required: true },
 		},
 	],
+	wallet_id: { type: Schema.Types.ObjectId, ref: 'wallets' },
 });
 
 const influencerModel = mongoose.model('influencers', influencerSchema);
