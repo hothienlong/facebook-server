@@ -11,7 +11,8 @@ export const updateInfluencer = async (
 	categories,
 	total_post,
 	engagement_score,
-	page_id
+	page_id,
+	access_token
 ) => {
 	try {
 		console.log('updateInfluencer service');
@@ -51,6 +52,7 @@ export const updateInfluencer = async (
 						social_id: page_id,
 						error_link: false,
 						is_crawl: false,
+						access_token: access_token,
 				  }
 				: social;
 		});

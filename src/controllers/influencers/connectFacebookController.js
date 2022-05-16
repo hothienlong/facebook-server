@@ -99,7 +99,8 @@ export default async (req, res) => {
 		categories,
 		post_count,
 		engagement_score,
-		page_id
+		page_id,
+		access_token
 	);
 
 	if (influencer === null) {
