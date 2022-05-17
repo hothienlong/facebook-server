@@ -3,6 +3,10 @@ export const APP_SECRET = '0bd71fa631faa58d956222d426f0d0cb';
 export const ROOT_API = 'https://graph.facebook.com';
 export const URL_CATEGORY_SERVER = 'http://127.0.0.1:1000';
 //'https://classification-server-inmansy.herokuapp.com';
+
+export const URL_SERVER_SENTIMENT =
+	'https://sentiment-server-inmansy.herokuapp.com';
+
 // export const PAGE_ID = '1912266269065309';
 
 // export const URL_HEROKU_SENTIMENT = "https://server-inmansy.herokuapp.com"
@@ -30,4 +34,13 @@ export const LIST_CATEGORIES = {
 	thucpham_douong: 'Ăn uống',
 };
 
-export const SCOPE = ['public_profile', 'email'];
+export const SCOPE = [
+	'public_profile',
+	'email',
+	'read_insights',
+	'pages_read_engagement',
+	'user_posts',
+	'pages_manage_posts',
+];
+
+export const LIMIT_COMMENT = 50; // số lượng cmt từng đợt gửi lên sentiment server

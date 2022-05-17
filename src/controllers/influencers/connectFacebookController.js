@@ -1,14 +1,20 @@
 /* eslint-disable no-redeclare */
 import axios from 'axios';
-import { URL_CATEGORY_SERVER } from '../../constants';
+import {
+	LIMIT_COMMENT,
+	URL_CATEGORY_SERVER,
+	URL_SERVER_SENTIMENT,
+} from '../../constants';
 import { updateInfluencer } from '../../services/influencers';
 import FacebookUtil from '../../utils/FacebookUtil';
+
 const FB = require('fb');
 
 // This is where a route is handled, the function MUST accept 2 params request and response.
 // Request will include all the information of the INCOMING request
 // Response will be used to send OUTGOING information
 
+// 4 years 3 month
 const threeMonthAgo = new Date(
 	new Date().getFullYear() - 4,
 	new Date().getMonth() - 3,
@@ -23,6 +29,35 @@ export default async (req, res) => {
 
 	console.log({ access_token, page_id });
 
+	// Sentiment score
+	let { all_comments, error: errorComments } = await get_all_comments_of_page(
+		access_token,
+		page_id
+	);
+
+	if (!all_comments) {
+		return res.status(500).json(errorComments);
+	}
+
+	const { sentiment_score, error: errorSentiment } =
+		await calculateSentimentScore(all_comments.length, all_comments);
+
+	if (!sentiment_score) {
+		return res.status(500).json(errorSentiment);
+	}
+
+	// Engagement score
+	let {
+		engagement_score,
+		post_count,
+		error: error_engagement,
+	} = await get_engagement(access_token, page_id);
+	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
+	if (engagement_score === null) {
+		return res.status(500).json(error_engagement);
+	}
+
+	// Basic info
 	let { basic_info, error: error_basic_info } = await get_basic_info(
 		access_token,
 		page_id
@@ -31,6 +66,10 @@ export default async (req, res) => {
 		return res.status(500).json(error_basic_info);
 	}
 
+	// Get influencer size
+	const influencer_size = get_influencer_size(basic_info.followers_count);
+
+	// Category
 	let facebook_categories = basic_info.category_list.map((cate) => cate.name);
 
 	let { categories, error: error_categories } = await get_categories(
@@ -43,53 +82,7 @@ export default async (req, res) => {
 		return res.status(500).json(error_categories);
 	}
 
-	let {
-		engagement_score,
-		post_count,
-		error: error_engagement,
-	} = await get_engagement(access_token, page_id);
-	// !engagement_score sẽ bị rơi vào trường hợp engagement_score = 0
-	if (engagement_score === null) {
-		return res.status(500).json(error_engagement);
-	}
-
-	// let all_comments = await get_all_comments_of_posts(req.body.access_token, req.body.page_id);
-	// if(!all_comments) { return res.status(500).json(error);}
-
-	// --------------- Map followers to influencer size ---------------
-	// followers -> influencer_size
-	let influencer_size = 'Nano';
-	if (basic_info.followers_count >= 0 && basic_info.followers_count < 5000) {
-		influencer_size = 'Nano';
-	} else if (
-		basic_info.followers_count >= 5000 &&
-		basic_info.followers_count < 25000
-	) {
-		influencer_size = 'Micro';
-	} else if (
-		basic_info.followers_count >= 25000 &&
-		basic_info.followers_count < 100000
-	) {
-		influencer_size = 'Small';
-	} else if (
-		basic_info.followers_count >= 100000 &&
-		basic_info.followers_count < 500000
-	) {
-		influencer_size = 'Medium';
-	} else if (
-		basic_info.followers_count >= 500000 &&
-		basic_info.followers_count < 1000000
-	) {
-		influencer_size = 'Macro';
-	} else if (basic_info.followers_count >= 1000000) {
-		influencer_size = 'Mega';
-	}
-
-	console.log('influencer_size');
-	console.log(influencer_size);
-
 	// --------------- Update Influencer ---------------
-	// sentiment
 	const { influencer, message } = await updateInfluencer(
 		req.body.influencer_id,
 		basic_info.name,
@@ -99,6 +92,7 @@ export default async (req, res) => {
 		categories,
 		post_count,
 		engagement_score,
+		sentiment_score,
 		page_id,
 		access_token
 	);
@@ -128,7 +122,7 @@ async function get_basic_info(access_token, page_id) {
 			console.log('request timeout');
 			return { error: error.response.error, basic_info: null };
 		} else {
-			console.log('error', error.message);
+			console.log('error in get_basic_info', error.message);
 			return { error: error.message, basic_info: null };
 		}
 	}
@@ -219,12 +213,13 @@ async function get_categories(access_token, page_id, facebook_categories) {
 			console.log('request timeout');
 			return { error: error.response.error, categories: null };
 		} else {
-			console.log('error', error.message);
+			console.log('error in get_categories', error.message);
 			return { error: error.message, categories: null };
 		}
 	}
 }
 
+// Get engagement score
 async function get_engagement(access_token, page_id) {
 	console.log('get_engagement');
 	// ko nên dùng hàm callback ở trong hàm async (sẽ ko return đc)
@@ -236,8 +231,6 @@ async function get_engagement(access_token, page_id) {
 		);
 
 		console.log(res.data);
-
-		console.log('get_engagement2');
 
 		let engagement_score = 0;
 		let post_count = 0;
@@ -264,7 +257,6 @@ async function get_engagement(access_token, page_id) {
 
 			// console.log(engagement_score);
 		}
-		console.log('get_engagement3');
 
 		// trung bình cộng
 		if (post_count !== 0)
@@ -280,33 +272,116 @@ async function get_engagement(access_token, page_id) {
 			console.log('request timeout');
 			return { error: error.response.error, engagement_score: null };
 		} else {
-			console.log('error', error.message);
+			console.log('error in get_engagement', error.message);
 			return { error: error.message, engagement_score: null };
 		}
 	}
 }
 
-/*
- async function get_all_comments_of_posts(access_token, page_id) {
- 	console.log('get_all_comments_of_posts');
- 	try {
- 		let res = await FB.api(
- 			page_id +
- 				'/feed?fields=comments.summary(1).filter(stream), created_time, message',
- 			{ access_token: access_token }
- 		);
- 
- 		// console.log(JSON.stringify(res, null, 2));
- 		console.log(res);
- 	} catch (error) {
- 		if (error.response.error.code === 'ETIMEDOUT') {
- 			console.log('request timeout');
- 			return { error: error.response.error, all_comments: null };
- 		} else {
- 			console.log('error', error.message);
- 			return { error: error.message, all_comments: null };
- 		}
- 	}
- }
-  
-*/
+// Get all comments of page
+async function get_all_comments_of_page(access_token, page_id) {
+	console.log('get_all_comments_of_page');
+	try {
+		let res = await FB.api(
+			page_id +
+				'/feed?fields=comments.summary(1).filter(stream), created_time, message',
+			{ access_token: access_token }
+		);
+
+		// console.log(JSON.stringify(res, null, 2));
+		console.log(res.data);
+
+		let comments = [];
+
+		for (let i = 0; i < res.data.length; i++) {
+			// console.log(threeMonthAgo - new Date(res.data[i].created_time));
+
+			// get insight in 3 months ago
+			if (threeMonthAgo - new Date(res.data[i].created_time) > 0) continue;
+
+			let messageOfAPost = res?.data[i]?.comments?.data?.map(
+				(cmt) => cmt?.message
+			);
+
+			comments = comments.concat(messageOfAPost);
+		}
+
+		return { all_comments: comments };
+	} catch (error) {
+		console.log(error);
+		if (error.response.error.code === 'ETIMEDOUT') {
+			console.log('request timeout');
+			return { error: error.response.error, all_comments: null };
+		} else {
+			console.log('error in get_all_comments_of_page', error.message);
+			return { error: error.message, all_comments: null };
+		}
+	}
+}
+
+// Get sentiment score
+export const calculateSentimentScore = async (size, comments) => {
+	try {
+		let page = 0;
+		let pos = 0;
+		let neu = 0;
+		// lấy từng đợt để khỏi bị quá tải
+		while (page * LIMIT_COMMENT < size) {
+			const temp = comments.slice(
+				page * LIMIT_COMMENT,
+				(page + 1) * LIMIT_COMMENT
+			);
+			const res = await axios.post(
+				`${URL_SERVER_SENTIMENT}/analyze_sentiment`,
+				{
+					comments: temp,
+				},
+				{
+					withCredentials: true,
+				}
+			);
+			console.log(
+				'calculate sentiment page ',
+				page,
+				'pos: ',
+				res.data.pos,
+				'neu: ',
+				res.data.neu
+			);
+			pos = pos + res.data.pos;
+			neu = neu + res.data.neu;
+			page = page + 1;
+		}
+		// await deleteComments(email);
+		console.log('total pos neu', pos, neu);
+		return { sentiment_score: parseInt(((pos + (1 / 2) * neu) / size) * 100) };
+	} catch (error) {
+		console.log('error in calculateSentimentScore: ', error);
+		return { sentiment_score: null, error: error.message };
+	}
+};
+
+// --------------- Map followers to influencer size ---------------
+const get_influencer_size = function (followers) {
+	// followers -> influencer_size
+	let influencer_size = 'Nano';
+	if (followers >= 0 && followers < 5000) {
+		influencer_size = 'Nano';
+	} else if (followers >= 5000 && followers < 25000) {
+		influencer_size = 'Micro';
+	} else if (followers >= 25000 && followers < 100000) {
+		influencer_size = 'Small';
+	} else if (followers >= 100000 && followers < 500000) {
+		influencer_size = 'Medium';
+	} else if (followers >= 500000 && followers < 1000000) {
+		influencer_size = 'Macro';
+	} else if (followers >= 1000000) {
+		influencer_size = 'Mega';
+	} else {
+		influencer_size = 'Nano';
+	}
+
+	console.log('influencer_size');
+	console.log(influencer_size);
+	return influencer_size;
+};

@@ -1,6 +1,6 @@
+import { INFLUENCER_SIZE } from '../constants';
 import influencerModel from '../models/influencers';
 const ObjectID = require('mongodb').ObjectId;
-import { INFLUENCER_SIZE } from '../constants';
 
 export const updateInfluencer = async (
 	influencer_id,
@@ -11,6 +11,7 @@ export const updateInfluencer = async (
 	categories,
 	total_post,
 	engagement_score,
+	sentiment_score,
 	page_id,
 	access_token
 ) => {
@@ -20,87 +21,49 @@ export const updateInfluencer = async (
 		console.log(influencer_id);
 
 		// --------------- Find Influencer ---------------
-		// get influencer hasn't connected facebook yet
 		const influencer = await influencerModel.findOne({
 			_id: ObjectID(influencer_id),
-			//'social_network.channel_name': { $ne: 'facebook' },
 		});
-
-		/*
- 		if (!influencer) {
- 			return {
- 				influencer: null,
- 				message: 'Influencer has connected facebook already',
- 			};
- 		} 
-*/
 
 		console.log(influencer);
 
-		// --------------- Update social network ---------------
-		const listSocial = influencer.social_network;
-
-		const newListSocial = listSocial.map((social) => {
-			return social.channel_name === 'facebook'
-				? {
-						social_name: social_name,
-						profile_link: profile_link,
-						followers: followers,
-						total_post: total_post,
-						engagement_score: engagement_score,
-						channel_name: 'facebook',
-						social_id: page_id,
-						error_link: false,
-						is_crawl: false,
-						access_token: access_token,
-				  }
-				: social;
-		});
-
-		console.log({ newListSocial });
-
-		await influencer.updateOne(
-			{ social_network: newListSocial },
-			{ new: true }
+		// Get influencer size
+		const new_influencer_size = get_new_influencer_size(
+			influencer.influencer_size,
+			influencer_size
 		);
 
-		// if influencer hasn't connected facebook -> add a new one
+		// Get categories
+		const new_categories = get_new_categories(
+			influencer.user_detail.categories,
+			categories
+		);
 
-		// --------------- Update influencer size ---------------
-		if (
-			INFLUENCER_SIZE[influencer.influencer_size] <
-			INFLUENCER_SIZE[influencer_size]
-		) {
-			await influencer.updateOne(
-				{ influencer_size: influencer_size },
-				{ new: true }
-			);
-		}
-
-		// --------------- Update categories ---------------
-		console.log('category influencer');
-		console.log({ categories });
-		// console.log(influencer.user_detail.categories);
-		var merge_categories = influencer.user_detail.categories.concat(categories);
-		var unique_merge_categories = [...new Set(merge_categories)];
-		// console.log(merge_categories);
-		// console.log(unique_merge_categories);
-
-		if (influencer.user_detail.categories !== unique_merge_categories) {
-			await influencer.updateOne(
-				{ 'user_detail.categories': unique_merge_categories },
-				{ new: true }
-			);
-		}
-
-		await influencer.save();
-
-		// console.log(influencer);
-
-		// lệnh update influencer size không save influencer mới nên phải tìm lại
-		const new_influencer = await influencerModel.findOne({
-			_id: ObjectID(influencer_id),
-		});
+		const new_influencer = await influencerModel.findOneAndUpdate(
+			{
+				_id: ObjectID(influencer_id),
+				'social_network.channel_name': 'facebook',
+			},
+			{
+				$set: {
+					'social_network.$.followers': followers,
+					'social_network.$.social_name': social_name,
+					'social_network.$.social_id': page_id,
+					'social_network.$.profile_link': profile_link,
+					'social_network.$.access_token': access_token,
+					'social_network.$.total_post': total_post,
+					'social_network.$.engagement_score': engagement_score,
+					'social_network.$.sentiment_score': sentiment_score,
+					'social_network.$.error_link': false,
+					'social_network.$.time_update': Date.now(),
+					'social_network.$.is_crawl': false,
+					//'social_network.$.fScore': fScore,
+				},
+				influencer_size: new_influencer_size,
+				'user_detail.categories': new_categories,
+				//inf_score: infScore,
+			}
+		);
 
 		console.log(new_influencer);
 
@@ -108,5 +71,36 @@ export const updateInfluencer = async (
 	} catch (error) {
 		console.error(error);
 		return { influencer: null, message: error };
+	}
+};
+
+// --------------- Update categories ---------------
+
+const get_new_categories = function (categories_in_db, categories_update) {
+	console.log('category influencer');
+	console.log({ categories_update });
+	// console.log(influencer.user_detail.categories);
+	let merge_categories = categories_in_db.concat(categories_update);
+	let unique_merge_categories = [...new Set(merge_categories)];
+	// console.log(merge_categories);
+	// console.log(unique_merge_categories);
+	return unique_merge_categories;
+};
+
+// --------------- Update influencer size ---------------
+
+const get_new_influencer_size = function (
+	influencer_size_in_db,
+	influencer_size_update
+) {
+	{
+		if (
+			INFLUENCER_SIZE[influencer_size_in_db] <
+			INFLUENCER_SIZE[influencer_size_update]
+		) {
+			return influencer_size_update;
+		} else {
+			return influencer_size_in_db;
+		}
 	}
 };
