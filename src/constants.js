@@ -43,4 +43,26 @@ export const SCOPE = [
 	'pages_manage_posts',
 ];
 
+export const NANO = 4999;
+export const MICRO = 24999;
+export const SMALL = 99999;
+export const MEDIUM = 499999;
+export const MACRO = 999999;
+export const MEGA_SCORE = 100;
+export const MACRO_SCORE = 90;
+export const MEDIUM_SCORE = 80;
+export const SMALL_SCORE = 70;
+export const MICRO_SCORE = 60;
+export const NANO_SCORE = 50;
+export const COEF_INFLUENCER_SIZE_S = 0.2;
+export const COEF_SENTIMENT_SCORE = 0.4;
+export const COEF_ENGAGEMENT_SCORE = 0.4;
+export const BRONZE = 50;
+export const SILVER = 60;
+export const GOLD = 70;
+export const PLATINUM = 85;
+export const DIAMOND = 100;
+export const COEF_SOCIAL_SCORE = 0.6;
+export const COEF_CAMPAIGN_SCORE = 0.3;
+export const COEF_RANK_S = 0.1;
 export const LIMIT_COMMENT = 50; // số lượng cmt từng đợt gửi lên sentiment server

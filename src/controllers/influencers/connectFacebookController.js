@@ -1,10 +1,34 @@
 /* eslint-disable no-redeclare */
 import axios from 'axios';
+import { ObjectID } from 'bson';
 import {
+	BRONZE,
+	COEF_CAMPAIGN_SCORE,
+	COEF_ENGAGEMENT_SCORE,
+	COEF_INFLUENCER_SIZE_S,
+	COEF_RANK_S,
+	COEF_SENTIMENT_SCORE,
+	COEF_SOCIAL_SCORE,
+	DIAMOND,
+	GOLD,
 	LIMIT_COMMENT,
+	MACRO,
+	MACRO_SCORE,
+	MEDIUM,
+	MEDIUM_SCORE,
+	MEGA_SCORE,
+	MICRO,
+	MICRO_SCORE,
+	NANO,
+	NANO_SCORE,
+	PLATINUM,
+	SILVER,
+	SMALL,
+	SMALL_SCORE,
 	URL_CATEGORY_SERVER,
 	URL_SERVER_SENTIMENT,
 } from '../../constants';
+import influencerModel from '../../models/influencers';
 import { updateInfluencer } from '../../services/influencers';
 import FacebookUtil from '../../utils/FacebookUtil';
 
@@ -25,9 +49,9 @@ export default async (req, res) => {
 	console.log('connectFacebookController');
 
 	// --------------- Get param to update by facebook api ---------------
-	const { access_token, page_id } = req.body;
+	const { access_token, page_id, influencer_id } = req.body;
 
-	console.log({ access_token, page_id });
+	console.log({ access_token, page_id, influencer_id });
 
 	// Sentiment score
 	let { all_comments, error: errorComments } = await get_all_comments_of_page(
@@ -82,9 +106,28 @@ export default async (req, res) => {
 		return res.status(500).json(error_categories);
 	}
 
+	// Get f_score
+	const f_score = await calculateFScore(
+		convertNumToString(basic_info.followers_count),
+		sentiment_score,
+		engagement_score
+	);
+	console.log('f_score', f_score);
+
+	// Get Influencer score
+	const { inf_score, error: error_inf_score } = await calculateInfluencerScore(
+		influencer_id,
+		f_score
+	);
+	console.log('inf score = ', inf_score);
+
+	if (inf_score === null) {
+		return res.status(500).json(error_inf_score);
+	}
+
 	// --------------- Update Influencer ---------------
 	const { influencer, message } = await updateInfluencer(
-		req.body.influencer_id,
+		influencer_id,
 		basic_info.name,
 		basic_info.link,
 		basic_info.followers_count,
@@ -93,6 +136,8 @@ export default async (req, res) => {
 		post_count,
 		engagement_score,
 		sentiment_score,
+		f_score,
+		inf_score,
 		page_id,
 		access_token
 	);
@@ -263,7 +308,6 @@ async function get_engagement(access_token, page_id) {
 			engagement_score = (engagement_score / post_count).toFixed(2) * 100;
 		console.log('engagement_score');
 		console.log(engagement_score);
-		console.log('get_engagement4');
 
 		return { engagement_score: engagement_score, post_count: post_count };
 	} catch (error) {
@@ -320,7 +364,7 @@ async function get_all_comments_of_page(access_token, page_id) {
 }
 
 // Get sentiment score
-export const calculateSentimentScore = async (size, comments) => {
+const calculateSentimentScore = async (size, comments) => {
 	try {
 		let page = 0;
 		let pos = 0;
@@ -361,6 +405,52 @@ export const calculateSentimentScore = async (size, comments) => {
 	}
 };
 
+// Get Influencer score
+const calculateInfluencerScore = async (influencer_id, fScore) => {
+	try {
+		const data = await influencerModel.findOne({
+			_id: ObjectID(influencer_id),
+		});
+		if (data) {
+			const socialNetwork = data.social_network;
+			let socialScore = 0;
+			let totalError = 0; // cac lien ket mang xa hoi bi loi
+			const campaignRating = data.campaign_rating
+				? data.campaign_rating * 10
+				: 0;
+			console.log('campaignRating = ', campaignRating);
+			for (let i in socialNetwork) {
+				if (
+					socialNetwork[i].channel_name !== 'youtube' &&
+					!socialNetwork[i].error_link
+				)
+					socialScore += socialNetwork[i].fScore ? socialNetwork[i].fScore : 0;
+				else if (socialNetwork[i].error_link) totalError = totalError + 1;
+				else socialScore += fScore;
+			}
+			socialScore =
+				socialScore == 0
+					? 0
+					: socialScore / (socialNetwork.length - totalError);
+			console.log('social score = ', socialScore);
+			const rankS = calculateRankScore(data.user_detail.rank);
+			console.log('rankS = ', rankS);
+			return {
+				inf_score:
+					Math.round(
+						(socialScore * COEF_SOCIAL_SCORE +
+							campaignRating * COEF_CAMPAIGN_SCORE +
+							rankS * COEF_RANK_S) *
+							100
+					) / 100,
+			};
+		}
+	} catch (error) {
+		console.log('error in calculateInfluencerScore', error);
+		return { inf_score: null, error: error.message };
+	}
+};
+
 // --------------- Map followers to influencer size ---------------
 const get_influencer_size = function (followers) {
 	// followers -> influencer_size
@@ -384,4 +474,67 @@ const get_influencer_size = function (followers) {
 	console.log('influencer_size');
 	console.log(influencer_size);
 	return influencer_size;
+};
+
+// calculateFScore
+const calculateFScore = async function (size, sentimentScore, engagementScore) {
+	try {
+		const influencerSizeS = convertInfluencerSize(size);
+
+		const k =
+			influencerSizeS * COEF_INFLUENCER_SIZE_S +
+			COEF_SENTIMENT_SCORE * sentimentScore +
+			COEF_ENGAGEMENT_SCORE * engagementScore;
+		return Math.round(k * 100) / 100;
+	} catch (error) {
+		console.log('error in calculateFScore', error);
+		return 0;
+	}
+};
+
+// convertInfluencerSize
+const convertInfluencerSize = (size) => {
+	switch (size) {
+		case 'Mega':
+			return MEGA_SCORE;
+		case 'Macro':
+			return MACRO_SCORE;
+		case 'Medium':
+			return MEDIUM_SCORE;
+		case 'Small':
+			return SMALL_SCORE;
+		case 'Micro':
+			return MICRO_SCORE;
+		case 'Nano':
+			return NANO_SCORE;
+		default:
+			return 0;
+	}
+};
+
+// calculateRankScore
+const calculateRankScore = (rank) => {
+	switch (rank) {
+		case 'Bronze':
+			return BRONZE;
+		case 'Silver':
+			return SILVER;
+		case 'Gold':
+			return GOLD;
+		case 'Platinum':
+			return PLATINUM;
+		case 'Diamond':
+			return DIAMOND;
+		default:
+			return 0;
+	}
+};
+
+const convertNumToString = (num) => {
+	if (num <= NANO) return 'Nano';
+	else if (num < MICRO) return 'Micro';
+	else if (num < SMALL) return 'Small';
+	else if (num < MEDIUM) return 'Medium';
+	else if (num < MACRO) return 'Macro';
+	else return 'Mega';
 };

@@ -12,6 +12,8 @@ export const updateInfluencer = async (
 	total_post,
 	engagement_score,
 	sentiment_score,
+	f_score,
+	inf_score,
 	page_id,
 	access_token
 ) => {
@@ -54,14 +56,14 @@ export const updateInfluencer = async (
 					'social_network.$.total_post': total_post,
 					'social_network.$.engagement_score': engagement_score,
 					'social_network.$.sentiment_score': sentiment_score,
+					'social_network.$.fScore': f_score,
 					'social_network.$.error_link': false,
 					'social_network.$.time_update': Date.now(),
 					'social_network.$.is_crawl': false,
-					//'social_network.$.fScore': fScore,
 				},
 				influencer_size: new_influencer_size,
 				'user_detail.categories': new_categories,
-				//inf_score: infScore,
+				inf_score: inf_score,
 			}
 		);
 
