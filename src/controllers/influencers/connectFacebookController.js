@@ -364,7 +364,7 @@ async function get_all_comments_of_page(access_token, page_id) {
 }
 
 // Get sentiment score
-const calculateSentimentScore = async (size, comments) => {
+export const calculateSentimentScore = async (size, comments) => {
 	try {
 		let page = 0;
 		let pos = 0;

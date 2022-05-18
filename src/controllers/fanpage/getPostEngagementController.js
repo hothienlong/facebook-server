@@ -1,5 +1,6 @@
 /* eslint-disable no-redeclare */
 const FB = require('fb');
+import { calculateSentimentScore } from '../influencers/connectFacebookController';
 
 // sẽ có một số field không có (vd: share=0 thì sẽ không có field share)
 export default async (req, res) => {
@@ -11,6 +12,17 @@ export default async (req, res) => {
 
 	// ko nên dùng hàm callback ở trong hàm async (sẽ ko return đc)
 	try {
+		let {
+			message,
+			created_time,
+			error: errorAPost,
+		} = await get_a_post(access_token, post_id);
+		console.log({ message, created_time });
+
+		if (message === null && created_time === null) {
+			return res.status(500).json(errorAPost);
+		}
+
 		let {
 			reaction_count,
 			reaction_value,
@@ -24,10 +36,10 @@ export default async (req, res) => {
 
 		let {
 			comment_count,
-			comment_value,
+			comments,
 			error: errorCommentsOfPost,
 		} = await get_comments_of_post(access_token, post_id);
-		console.log({ comment_value });
+		console.log({ comments });
 
 		if (comment_count === null) {
 			return res.status(500).json(errorCommentsOfPost);
@@ -38,25 +50,40 @@ export default async (req, res) => {
 			access_token,
 			post_id
 		);
+
 		if (share_count === null) {
 			return res.status(500).json(errorShareOfPost);
 		}
 		console.log('share_count: ' + share_count);
 
+		const { sentiment_score, error: errorSentiment } =
+			await calculateSentimentScore(comments.length, comments);
+
+		if (!sentiment_score) {
+			return res.status(500).json(errorSentiment);
+		}
+		console.log('sentiment_score: ' + sentiment_score);
+
 		let { engagement_score, error: errorEngagement } = await get_engagement(
 			access_token,
 			post_id
 		);
+
 		if (engagement_score === null) {
 			return res.status(500).json(errorEngagement);
 		}
+		console.log('engagement_score: ' + engagement_score);
+
 		// console.log(JSON.stringify(res_engagement));
 
 		return res.status(200).json({
+			message,
+			created_time,
 			reaction_count: reaction_count,
 			comment_count: comment_count,
 			share_count: share_count,
 			engagement_score: engagement_score,
+			sentiment_score,
 		});
 	} catch (error) {
 		if (error.response === undefined) {
@@ -72,6 +99,40 @@ export default async (req, res) => {
 		}
 	}
 };
+
+// return info a post
+async function get_a_post(access_token, post_id) {
+	console.log('get_a_post');
+	try {
+		let res = await FB.api(
+			// post thông tin thầy
+			// '1912266269065309_1938674479757821' +
+			post_id,
+			{ access_token: access_token }
+		);
+
+		console.log(JSON.stringify(res));
+
+		return { message: res.message, created_time: res.created_time };
+	} catch (error) {
+		console.log(error);
+		if (error.response.error.code === 'ETIMEDOUT') {
+			console.log('request timeout');
+			return {
+				error: error.response.error,
+				reaction_count: null, /// reaction_value có thể null nếu không có reaction
+			};
+		} else {
+			console.log('error', error.message);
+			return {
+				error: error.message,
+				message: null,
+				created_time: null,
+			};
+		}
+	}
+}
+
 
 // return reaction_value null if no reaction
 async function get_reaction_of_post(access_token, post_id) {
@@ -144,7 +205,9 @@ async function get_comments_of_post(access_token, post_id) {
 		let comment_count = res_comment.summary.total_count;
 		// console.log(comment_count);
 
-		return { comment_value: comment_value, comment_count: comment_count };
+		const comments = comment_value.map((cmt) => cmt?.message);
+
+		return { comments: comments, comment_count: comment_count };
 	} catch (error) {
 		console.log(error);
 		if (error.response.error.code === 'ETIMEDOUT') {
