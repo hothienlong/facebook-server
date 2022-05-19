@@ -133,7 +133,6 @@ async function get_a_post(access_token, post_id) {
 	}
 }
 
-
 // return reaction_value null if no reaction
 async function get_reaction_of_post(access_token, post_id) {
 	console.log('get_reaction_of_post');
