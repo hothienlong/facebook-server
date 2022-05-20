@@ -1,8 +1,9 @@
 export const APP_ID = '1093184171468667';
 export const APP_SECRET = '0bd71fa631faa58d956222d426f0d0cb';
 export const ROOT_API = 'https://graph.facebook.com';
-export const URL_CATEGORY_SERVER = 'http://127.0.0.1:1000';
-//'https://classification-server-inmansy.herokuapp.com';
+export const URL_CATEGORY_SERVER =
+	'https://classification-server-inmansy.herokuapp.com';
+//'http://127.0.0.1:1000';
 
 export const URL_SERVER_SENTIMENT =
 	'https://sentiment-server-inmansy.herokuapp.com';
